@@ -1,5 +1,5 @@
 
-from config.config import configuration
+# from config.config import configuration
 from utils.udf_util import *
 
 from pyspark.sql import SparkSession
@@ -34,11 +34,11 @@ def define_udfs():
 if __name__ == "__main__":
     spark = (SparkSession.builder.appName("AWS_Spark_Unstructured_Data")
              .config("spark.jars.packages",
-                    "org.apache.hadoop:hadoop-aws:3.3.1,"
-                    "com.amazonaws.aws-java-sdk:1.11.469")
+                    "org.apache.hadoop:hadoop-aws:3.4.1,"
+                    "com.amazonaws:aws-java-sdk-bundle:1.12.262")
              .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-             .config("spark.hadoop.fs.s3a.access.key", configuration.get("AWS_ACCESS_KEY"))
-             .config("spark.hadoop.fs.s3a.secret.key", configuration.get("AWS_SECRET_KEY"))
+             # .config("spark.hadoop.fs.s3a.access.key", configuration.get("AWS_ACCESS_KEY"))
+             # .config("spark.hadoop.fs.s3a.secret.key", configuration.get("AWS_SECRET_KEY"))
              .config("spark.hadoop.fs.s3a.aws.credentials.provides"
                      , "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
              .getOrCreate())
