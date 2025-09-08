@@ -1,5 +1,10 @@
+import re
+from datetime import datetime
 def extract_file_name(file_content):
-    pass
+    file_content = file_content.strip()
+    position = file_content.split("\n")[0]
+
+    return position
 
 
 def extract_position(file_content):
@@ -7,7 +12,13 @@ def extract_position(file_content):
 
 
 def extract_class_code(file_content):
-    pass
+    try:
+        classcode_match = re.search(r'(Class Code:)\s+(\d+)', file_content)
+        class_code = classcode_match.group(2) if classcode_match else None
+
+        return class_code
+    except Exception as e:
+        raise ValueError(f"Error extracting class code: {e}")
 
 
 def extract_salary(file_content):
@@ -27,12 +38,28 @@ def extract_duties(file_content):
 
 
 def extract_start_date(file_content):
-    pass
+    try:
+        opendate_match = re.search(r'(Open [Dd]ate:)\s+(\d\d-\d\d-\d\d)', file_content)
+        start_date = datetime.strptime(opendate_match.group(2), '%m-%d-%y')
+
+        return start_date
+    except Exception as e:
+        raise ValueError(f"Error extracting start date: {e}")
 
 
 def extract_end_date(file_content):
-    pass
+    try:
+        end_date_match = re.search(
+            r'(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBERN|NOVEMBER|DECEMBER)\S(\d{1,2},\s\d{4})'
+            , file_content
+        )
+        end_date_group = end_date_match.group(2) if end_date_match else None
+        end_date = datetime.strptime(end_date_group, '%B %d, %Y') if end_date_group else None
 
+        return end_date
+
+    except Exception as e:
+        raise ValueError(f"Error extracting end date: {e}")
 
 def extract_selection(file_content):
     pass
