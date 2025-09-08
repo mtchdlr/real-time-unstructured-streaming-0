@@ -8,22 +8,22 @@ from pyspark.sql.types import (StructType
                                , StringType
                                , DoubleType
                                , DateType)
-from pyspark.sql.functions import udf
+from pyspark.sql.functions import udf, regexp_replace
 
 
 def define_udfs():
     return {
-        "extract_file_name_urf": udf(extract_file_name, StringType()),
-        "extract_position_urf": udf(extract_file_name, StringType()),
-        "extract_salary_urf": udf(extract_file_name, StructType([
+        "extract_file_name_udf": udf(extract_file_name, StringType()),
+        "extract_position_udf": udf(extract_position, StringType()),
+        "extract_salary_udf": udf(extract_salary, StructType([
             StructField("salary_start", DoubleType(), True),
             StructField("salary_end", DoubleType(), True),
         ])),
-        "extract_start_date_urf": udf(extract_start_date, DateType()),
-        "extract_end_date_urf": udf(extract_end_date, DateType()),
-        "extract_classcode_urf": udf(extract_class_code, StringType()),
-        "extract_requirements_urf": udf(extract_requirements, StringType()),
-        "extract_notes_urf": udf(extract_notes, StringType()),
+        "extract_start_date_udf": udf(extract_start_date, DateType()),
+        "extract_end_date_udf": udf(extract_end_date, DateType()),
+        "extract_classcode_udf": udf(extract_class_code, StringType()),
+        "extract_requirements_udf": udf(extract_requirements, StringType()),
+        "extract_notes_udf": udf(extract_notes, StringType()),
         "extract_duties_udf": udf(extract_duties, StringType()),
         "extract_selection_udf": udf(extract_selection, StringType()),
         "extract_experience_length_udf": udf(extract_experience_length, StringType()),
@@ -43,7 +43,7 @@ if __name__ == "__main__":
                      , "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
              .getOrCreate())
 
-    input_dir: str = "file://home/mtchdlr/real-time-unstructured-streaming-0/input"
+    input_dir: str = "file:///home/mtchdlr/real-time-unstructured-streaming-0/input"
     text_input: str = input_dir + "/input_text"
     json_input: str = input_dir + "/input_json"
     video_input: str = input_dir + "/input_video"
@@ -74,5 +74,24 @@ if __name__ == "__main__":
     job_bulletins_df = (spark.readStream.format("text")
                         .option("wholetext", "true")
                         .load(text_input))
-    
-    job_bulletins_df.show()
+
+    job_bulletins_df = job_bulletins_df.withColumn("file_name", regexp_replace(udfs["extract_file_name_udf"]("value"), '\r', ' '))
+
+    job_bulletins_df = job_bulletins_df.withColumn("value", regexp_replace("value", r'\n', ' '))
+    job_bulletins_df = job_bulletins_df.withColumn("position", regexp_replace(udfs["extract_position_udf"]("value"), '\r', ' '))
+    job_bulletins_df = job_bulletins_df.withColumn("salary_start", udfs["extract_salary_udf"]("value").getField("salary_start"))
+    job_bulletins_df = job_bulletins_df.withColumn("salary_end", udfs["extract_salary_udf"]("value").getField("salary_end"))
+    job_bulletins_df = job_bulletins_df.withColumn("start_date", udfs["extract_start_date_udf"]("value"))
+    job_bulletins_df = job_bulletins_df.withColumn("end_date", udfs["extract_end_date_udf"]("value"))
+
+    j_df = job_bulletins_df.select("file_name", "position", "start_date", "end_date", "salary_start", "salary_end")
+
+    query = (j_df
+             .writeStream
+             .outputMode("append")
+             .format("console")
+             .option("truncate", False)
+             .start()
+             )
+
+    query.awaitTermination()
