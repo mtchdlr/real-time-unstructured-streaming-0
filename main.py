@@ -5,7 +5,8 @@ from config.config import (column_list
                            , json_input)
 
 from utils.spark_util import (data_schema
-                              , define_udfs)
+                              , define_udfs
+                              , stream_writer)
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import regexp_replace
@@ -17,8 +18,8 @@ if __name__ == "__main__":
                     "org.apache.hadoop:hadoop-aws:3.4.1,"
                     "com.amazonaws:aws-java-sdk-bundle:1.12.262")
              .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-             # .config("spark.hadoop.fs.s3a.access.key", configuration.get("AWS_ACCESS_KEY"))
-             # .config("spark.hadoop.fs.s3a.secret.key", configuration.get("AWS_SECRET_KEY"))
+             .config("spark.hadoop.fs.s3a.access.key", configuration.get("AWS_ACCESS_KEY"))
+             .config("spark.hadoop.fs.s3a.secret.key", configuration.get("AWS_SECRET_KEY"))
              .config("spark.hadoop.fs.s3a.aws.credentials.provides"
                      , "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
              .getOrCreate())
@@ -57,12 +58,10 @@ if __name__ == "__main__":
 
     union_df = job_bulletins_df.union(json_df)
 
-    query = (union_df
-             .writeStream
-             .outputMode("append")
-             .format("console")
-             .option("truncate", False)
-             .start()
-             )
+    query = stream_writer(input_data=union_df
+                         , checkpoint_folder="s3a://aws-spark-steam-unstructured-00/checkpoint/"
+                         , output_path="s3a://aws-spark-steam-unstructured-00/data/spark_unstructured")
 
     query.awaitTermination()
+
+    spark.stop()
