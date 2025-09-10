@@ -1,5 +1,55 @@
 import re
 from datetime import datetime
+
+
+from pyspark.sql.types import (StructType
+                               , StructField
+                               , StringType
+                               , DoubleType
+                               , DateType)
+from pyspark.sql.functions import udf
+
+
+data_schema = StructType([
+    StructField("file_name", StringType(), True),
+    StructField("position", StringType(), True),
+    StructField("classcode", StringType(), True),
+    StructField("salary_start", DoubleType(), True),
+    StructField("salary_end", DoubleType(), True),
+    StructField("start_date", DateType(), True),
+    StructField("end_date", DateType(), True),
+    StructField("req", StringType(), True),
+    StructField("notes", StringType(), True),
+    StructField("duties", StringType(), True),
+    StructField("selection", StringType(), True),
+    StructField("experience_length", StringType(), True),
+    StructField("education_length", StringType(), True),
+    StructField("school_type", StringType(), True),
+    StructField("application_location", StringType(), True),
+])
+
+
+def define_udfs():
+    return {
+        "extract_file_name_udf": udf(extract_file_name, StringType()),
+        "extract_position_udf": udf(extract_position, StringType()),
+        "extract_salary_udf": udf(extract_salary, StructType([
+            StructField("salary_start", DoubleType(), True),
+            StructField("salary_end", DoubleType(), True),
+        ])),
+        "extract_start_date_udf": udf(extract_start_date, DateType()),
+        "extract_end_date_udf": udf(extract_end_date, DateType()),
+        "extract_classcode_udf": udf(extract_class_code, StringType()),
+        "extract_requirements_udf": udf(extract_requirements, StringType()),
+        "extract_notes_udf": udf(extract_notes, StringType()),
+        "extract_duties_udf": udf(extract_duties, StringType()),
+        "extract_selection_udf": udf(extract_selection, StringType()),
+        "extract_experience_length_udf": udf(extract_experience_length, StringType()),
+        "extract_education_length_udf": udf(extract_education_length, StringType()),
+        "extract_application_location_udf": udf(extract_application_location, StringType()),
+    }
+
+
 def extract_file_name(file_content):
     file_content = file_content.strip()
     position = file_content.split("\n")[0]
