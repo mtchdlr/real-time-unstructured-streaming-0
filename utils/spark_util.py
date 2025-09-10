@@ -189,3 +189,13 @@ def extract_application_location(file_content):
         return app_loc
     except Exception as e:
         raise ValueError(f'Error extracting application location: {e}')
+
+
+def stream_writer(input_data, checkpoint_folder: str, output_path: str):
+    return (input_data.writeStream
+            .format("parquet")
+            .option("checkpointLocation", checkpoint_folder)
+            .option("path", output_path)
+            .outputMode("append")
+            .trigger(processingTime="5 seconds")
+            .start())
